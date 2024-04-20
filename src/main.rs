@@ -1,7 +1,24 @@
+mod all;
+mod color_file;
+
+use all::*;
+
+use clap::Parser;
 use eframe::egui;
+use egui::Color32;
+
+#[derive(Parser)]
+struct Args {
+  source_path: PathBuf,
+}
 
 fn main() -> Result<(), eframe::Error> {
   env_logger::Builder::new().filter_level(log::LevelFilter::Info).init();
+  let args = Args::parse();
+
+  let _s = std::fs::read_to_string(&args.source_path).unwrap();
+    // .with_context(fformat!("read file `{}`.", path.display()))?;
+
   let options = eframe::NativeOptions {
     viewport: egui::ViewportBuilder::default().with_maximized(true),
     ..Default::default()
