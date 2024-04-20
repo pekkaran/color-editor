@@ -1,23 +1,22 @@
+#[macro_use] mod macros;
+
 mod all;
 mod color_file;
 
 use all::*;
 
 use clap::Parser;
-use eframe::egui;
-use egui::Color32;
 
 #[derive(Parser)]
 struct Args {
   source_path: PathBuf,
 }
 
-fn main() -> Result<(), eframe::Error> {
+fn main() -> Result<()> {
   env_logger::Builder::new().filter_level(log::LevelFilter::Info).init();
   let args = Args::parse();
 
-  let _s = std::fs::read_to_string(&args.source_path).unwrap();
-    // .with_context(fformat!("read file `{}`.", path.display()))?;
+  let color_file = ColorFile::new(&args.source_path)?;
 
   let options = eframe::NativeOptions {
     viewport: egui::ViewportBuilder::default().with_maximized(true),
@@ -26,20 +25,21 @@ fn main() -> Result<(), eframe::Error> {
   eframe::run_native(
     "Color editor",
     options,
-    Box::new(|_| { Box::<ColorEditor>::default() }),
-  )
-}
-
-struct ColorEditor {
-  pub test_color: Color32,
-}
-
-impl Default for ColorEditor {
-  fn default() -> Self {
-    Self {
+    Box::new(|_creation_context| { Box::new(ColorEditor {
+      // source_path: args.source_path,
+      color_file,
       test_color: Color32::RED,
-    }
-  }
+    })}),
+  ).unwrap();
+
+  Ok(())
+}
+
+#[allow(dead_code)]
+struct ColorEditor {
+  // pub source_path: PathBuf,
+  pub color_file: ColorFile,
+  pub test_color: Color32,
 }
 
 impl eframe::App for ColorEditor {
