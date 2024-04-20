@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 eframe = "0.27.2"
 env_logger = { version = "0.11.3", default-features = false }
+log = "0.4.21"
