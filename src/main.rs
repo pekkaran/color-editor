@@ -14,18 +14,26 @@ fn main() -> Result<(), eframe::Error> {
 }
 
 struct ColorEditor {
+  pub test_color: Color32,
 }
 
 impl Default for ColorEditor {
   fn default() -> Self {
     Self {
+      test_color: Color32::RED,
     }
   }
 }
 
 impl eframe::App for ColorEditor {
   fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-    egui::CentralPanel::default().show(ctx, |_ui| {
+    if ctx.input(|i| i.key_pressed(egui::Key::Q)) {
+      ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+    }
+
+    egui::CentralPanel::default().show(ctx, |ui| {
+      use egui::widgets::color_picker::Alpha;
+      egui::widgets::color_picker::color_picker_color32(ui, &mut self.test_color, Alpha::Opaque);
     });
   }
 }
