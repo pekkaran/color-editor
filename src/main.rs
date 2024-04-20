@@ -30,6 +30,7 @@ fn main() -> Result<()> {
       color_file,
       selected_token: None,
       old_color: Color32::BLACK,
+      monospace: true,
     })}),
   ).unwrap();
 
@@ -41,6 +42,7 @@ pub struct ColorEditor {
   pub color_file: ColorFile,
   pub selected_token: Option<usize>,
   pub old_color: Color32,
+  pub monospace: bool,
 }
 
 impl eframe::App for ColorEditor {

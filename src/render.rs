@@ -9,7 +9,7 @@ pub fn render_center(ui: &mut egui::Ui, c: &mut ColorEditor) {
       for (i, token) in c.color_file.tokens.iter().enumerate() {
         match token {
           Token::Text(s) => {
-            ui.label(&*s);
+            ui.label(rich_text(s, c.monospace));
           },
           Token::Color(color_kind, color32) => {
             ui.add_space(SPACE_AROUND_COLOR_BOX);
@@ -17,7 +17,7 @@ pub fn render_center(ui: &mut egui::Ui, c: &mut ColorEditor) {
             ui.add_space(SPACE_AROUND_COLOR_BOX);
 
             let s = color_to_text(*color_kind, *color32);
-            let link_response = ui.link(&*s);
+            let link_response = ui.link(rich_text(&s, c.monospace));
 
             if link_response.clicked() || box_response.clicked() {
               c.selected_token = Some(i);
@@ -29,11 +29,17 @@ pub fn render_center(ui: &mut egui::Ui, c: &mut ColorEditor) {
   });
 }
 
+fn rich_text(text: &str, monospace: bool) -> egui::RichText {
+  let mut rich_text = egui::RichText::new(text);
+  if monospace { rich_text = rich_text.monospace() }
+  rich_text
+}
+
 fn render_color_box(ui: &mut egui::Ui, color32: Color32) -> Response {
   let (rect, response) = ui.allocate_at_least(egui::Vec2::splat(10.), egui::Sense::click());
   ui.painter().rect(
     rect,
-    0., // rounding
+    1., // rounding
     color32,
     egui::Stroke::new(1., Color32::WHITE),
   );
@@ -41,6 +47,9 @@ fn render_color_box(ui: &mut egui::Ui, color32: Color32) -> Response {
 }
 
 pub fn render_left(ui: &mut egui::Ui, c: &mut ColorEditor) {
+  ui.checkbox(&mut c.monospace, "Monospace font");
+  ui.separator();
+
   if let Some(selected_token) = c.selected_token {
     if let Token::Color(_color_kind, ref mut color32) = c.color_file.tokens[selected_token] {
       render_color_picker(ui, color32);
