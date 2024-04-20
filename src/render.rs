@@ -1,6 +1,7 @@
 use crate::all::*;
 
 const SPACE_AROUND_COLOR_BOX: f32 = 5.;
+const COLOR_COMPARISON_BOX_SIZE: f32 = 100.;
 
 pub fn render_center(ui: &mut egui::Ui, c: &mut ColorEditor) {
   egui::ScrollArea::vertical().show(ui, |ui| {
@@ -13,7 +14,7 @@ pub fn render_center(ui: &mut egui::Ui, c: &mut ColorEditor) {
           },
           Token::Color(color_kind, color32) => {
             ui.add_space(SPACE_AROUND_COLOR_BOX);
-            let box_response = render_color_box(ui, *color32);
+            let box_response = render_color_box(ui, *color32, 10.);
             ui.add_space(SPACE_AROUND_COLOR_BOX);
 
             let s = color_to_text(*color_kind, *color32);
@@ -21,6 +22,7 @@ pub fn render_center(ui: &mut egui::Ui, c: &mut ColorEditor) {
 
             if link_response.clicked() || box_response.clicked() {
               c.selected_token = Some(i);
+              c.old_color = *color32;
             }
           },
         }
@@ -35,8 +37,8 @@ fn rich_text(text: &str, monospace: bool) -> egui::RichText {
   rich_text
 }
 
-fn render_color_box(ui: &mut egui::Ui, color32: Color32) -> Response {
-  let (rect, response) = ui.allocate_at_least(egui::Vec2::splat(10.), egui::Sense::click());
+fn render_color_box(ui: &mut egui::Ui, color32: Color32, size: f32) -> Response {
+  let (rect, response) = ui.allocate_at_least(egui::Vec2::splat(size), egui::Sense::click());
   ui.painter().rect(
     rect,
     1., // rounding
@@ -53,6 +55,12 @@ pub fn render_left(ui: &mut egui::Ui, c: &mut ColorEditor) {
   if let Some(selected_token) = c.selected_token {
     if let Token::Color(_color_kind, ref mut color32) = c.color_file.tokens[selected_token] {
       render_color_picker(ui, color32);
+      ui.separator();
+      ui.label("Previous and current colors:");
+      ui.horizontal_wrapped(|ui| {
+        render_color_box(ui, c.old_color, COLOR_COMPARISON_BOX_SIZE);
+        render_color_box(ui, *color32, COLOR_COMPARISON_BOX_SIZE);
+      });
     }
   }
 }
