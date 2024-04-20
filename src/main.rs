@@ -2,6 +2,7 @@
 
 mod all;
 mod color_file;
+mod render;
 
 use all::*;
 
@@ -36,7 +37,7 @@ fn main() -> Result<()> {
 }
 
 #[allow(dead_code)]
-struct ColorEditor {
+pub struct ColorEditor {
   // pub source_path: PathBuf,
   pub color_file: ColorFile,
   pub test_color: Color32,
@@ -47,6 +48,10 @@ impl eframe::App for ColorEditor {
     if ctx.input(|i| i.key_pressed(egui::Key::Q)) {
       ctx.send_viewport_cmd(egui::ViewportCommand::Close);
     }
+
+    egui::SidePanel::left("left").default_width(1000.).show(ctx, |ui| {
+      render_left(ui, &self);
+    });
 
     egui::CentralPanel::default().show(ctx, |ui| {
       use egui::widgets::color_picker::Alpha;
