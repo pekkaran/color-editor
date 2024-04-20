@@ -11,3 +11,4 @@ clap = { version = "4.5.4", features = ["derive"] }
 eframe = "0.27.2"
 env_logger = { version = "0.11.3", default-features = false }
 log = "0.4.21"
+regex = "1.10.4"

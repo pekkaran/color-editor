@@ -788,6 +788,7 @@ dependencies = [
  "eframe",
  "env_logger",
  "log",
+ "regex",
 ]
 
 [[package]]
