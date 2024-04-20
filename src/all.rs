@@ -8,7 +8,8 @@ pub use eframe::egui;
 
 #[allow(unused_imports)]
 pub use anyhow::{Context, Result, bail};
-pub use egui::Color32;
+pub use egui::{Color32, Response};
+pub use lazy_static::lazy_static;
 #[allow(unused_imports)]
 pub use log::info;
 pub use regex::Regex;

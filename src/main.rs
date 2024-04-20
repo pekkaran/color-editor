@@ -27,9 +27,9 @@ fn main() -> Result<()> {
     "Color editor",
     options,
     Box::new(|_creation_context| { Box::new(ColorEditor {
-      // source_path: args.source_path,
       color_file,
-      test_color: Color32::RED,
+      selected_token: None,
+      old_color: Color32::BLACK,
     })}),
   ).unwrap();
 
@@ -38,9 +38,9 @@ fn main() -> Result<()> {
 
 #[allow(dead_code)]
 pub struct ColorEditor {
-  // pub source_path: PathBuf,
   pub color_file: ColorFile,
-  pub test_color: Color32,
+  pub selected_token: Option<usize>,
+  pub old_color: Color32,
 }
 
 impl eframe::App for ColorEditor {
@@ -50,12 +50,11 @@ impl eframe::App for ColorEditor {
     }
 
     egui::SidePanel::left("left").default_width(1000.).show(ctx, |ui| {
-      render_left(ui, &self);
+      render_left(ui, self);
     });
 
     egui::CentralPanel::default().show(ctx, |ui| {
-      use egui::widgets::color_picker::Alpha;
-      egui::widgets::color_picker::color_picker_color32(ui, &mut self.test_color, Alpha::Opaque);
+      render_center(ui, self);
     });
   }
 }
