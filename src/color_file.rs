@@ -7,6 +7,7 @@ lazy_static! {
 
 pub struct ColorFile {
   pub tokens: Vec<Token>,
+  pub color_count: usize,
   pub path: PathBuf,
 }
 
@@ -15,9 +16,10 @@ impl ColorFile {
     let source = std::fs::read_to_string(path)
       .with_context(fformat!("read file `{}`.", path.display()))?;
 
-    let tokens = parse_text(&source)?;
+    let (tokens, color_count) = parse_text(&source)?;
     Ok(ColorFile {
       tokens,
+      color_count,
       path: path.to_owned(),
     })
   }
@@ -107,7 +109,7 @@ pub fn color_to_text(color_kind: ColorKind, color32: Color32) -> String {
   }
 }
 
-fn parse_text(source: &str) -> Result<Vec<Token>> {
+fn parse_text(source: &str) -> Result<(Vec<Token>, usize)> {
   #[derive(Clone)]
   struct ColorRange {
     range: Range<usize>,
@@ -157,6 +159,7 @@ fn parse_text(source: &str) -> Result<Vec<Token>> {
   let bytes = source.as_bytes();
   let mut tokens = vec![];
   let mut c = 0;
+  let mut color_count = 0;
   for color_range in used_ranges {
     let next = color_range.range.start;
     if c < next {
@@ -165,6 +168,7 @@ fn parse_text(source: &str) -> Result<Vec<Token>> {
       tokens.push(Token::Text(s));
     }
     tokens.push(Token::Color(color_range.color_kind, color_range.color32));
+    color_count += 1;
     c = color_range.range.end;
   }
 
@@ -175,5 +179,5 @@ fn parse_text(source: &str) -> Result<Vec<Token>> {
     tokens.push(Token::Text(s));
   }
 
-  Ok(tokens)
+  Ok((tokens, color_count))
 }

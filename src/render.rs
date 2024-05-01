@@ -5,6 +5,10 @@ const COLOR_COMPARISON_BOX_SIZE: f32 = 100.;
 
 pub fn render_center(ui: &mut egui::Ui, c: &mut ColorEditor) {
   egui::ScrollArea::vertical().show(ui, |ui| {
+    if c.color_file.color_count == 0 {
+      ui.label(egui::RichText::new("No colors found in the file!").size(20.0).underline().strong());
+    }
+
     ui.horizontal_wrapped(|ui| {
       ui.spacing_mut().item_spacing.x = 0.0;
       for (i, token) in c.color_file.tokens.iter().enumerate() {
