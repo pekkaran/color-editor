@@ -49,7 +49,13 @@ fn render_color_box(ui: &mut egui::Ui, color32: Color32, size: f32) -> Response 
 }
 
 pub fn render_left(ui: &mut egui::Ui, c: &mut ColorEditor) {
+  if ui.add_enabled(!c.autosave, egui::Button::new("Save")).clicked() {
+    c.should_save = true;
+  }
+
   ui.checkbox(&mut c.monospace, "Monospace font");
+  ui.checkbox(&mut c.autosave, "Autosave");
+
   ui.separator();
 
   if let Some(selected_token) = c.selected_token {
@@ -62,7 +68,7 @@ pub fn render_left(ui: &mut egui::Ui, c: &mut ColorEditor) {
         render_color_box(ui, c.old_color32, COLOR_COMPARISON_BOX_SIZE);
         render_color_box(ui, *color32, COLOR_COMPARISON_BOX_SIZE);
       });
-      if *color32 != color32_before_pick {
+      if c.autosave && *color32 != color32_before_pick {
         c.should_save = true;
       }
 

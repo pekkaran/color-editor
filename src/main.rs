@@ -10,7 +10,20 @@ use clap::Parser;
 
 #[derive(Parser)]
 struct Args {
-  source_path: PathBuf,
+  /// Path to the file to edit.
+  pub source_path: PathBuf,
+
+  /// Show the edited file in monospace font.
+  #[arg(short, long)]
+  pub monospace: Option<bool>,
+
+  /// Save the edited file on every change.
+  #[arg(short, long)]
+  pub autosave: Option<bool>,
+
+  /// UI scale. Use eg 1.5 to make everything bigger.
+  #[arg(short, long, default_value_t = 1.0)]
+  pub scale: f32,
 }
 
 fn main() -> Result<()> {
@@ -26,13 +39,18 @@ fn main() -> Result<()> {
   eframe::run_native(
     "Color editor",
     options,
-    Box::new(|_creation_context| { Box::new(ColorEditor {
-      color_file,
-      selected_token: None,
-      old_color32: Color32::BLACK,
-      monospace: true,
-      should_save: false,
-    })}),
+    Box::new(move |creation_context| {
+      creation_context.egui_ctx.set_pixels_per_point(args.scale);
+
+      Box::new(ColorEditor {
+        color_file,
+        selected_token: None,
+        old_color32: Color32::BLACK,
+        should_save: false,
+        monospace: args.monospace.unwrap_or(true),
+        autosave: args.autosave.unwrap_or(true),
+      })
+    }),
   ).unwrap();
 
   Ok(())
@@ -43,8 +61,11 @@ pub struct ColorEditor {
   pub color_file: ColorFile,
   pub selected_token: Option<usize>,
   pub old_color32: Color32,
-  pub monospace: bool,
   pub should_save: bool,
+
+  // Options.
+  pub monospace: bool,
+  pub autosave: bool,
 }
 
 impl eframe::App for ColorEditor {
