@@ -15,12 +15,12 @@ struct Args {
   pub source_path: PathBuf,
 
   /// Show the edited file in monospace font.
-  #[arg(short, long)]
-  pub monospace: Option<bool>,
+  #[arg(short, long, default_value_t = true, action = clap::ArgAction::Set)]
+  pub monospace: bool,
 
   /// Save the edited file on every change.
-  #[arg(short, long)]
-  pub autosave: Option<bool>,
+  #[arg(short, long, default_value_t = true, action = clap::ArgAction::Set)]
+  pub autosave: bool,
 
   /// UI scale. Use eg 1.5 to make everything bigger.
   #[arg(short, long, default_value_t = 1.0)]
@@ -64,8 +64,8 @@ fn main() -> Result<()> {
         selected_token: None,
         old_color32: Color32::BLACK,
         should_save: false,
-        monospace: args.monospace.unwrap_or(true),
-        autosave: args.autosave.unwrap_or(true),
+        monospace: args.monospace,
+        autosave: args.autosave,
       })
     }),
   ).unwrap();
