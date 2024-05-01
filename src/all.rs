@@ -1,10 +1,12 @@
 pub use crate::{
   ColorEditor,
   color_file::*,
+  parse_options::*,
   render::*,
 };
 
 pub use eframe::egui;
+pub use strum::{EnumDiscriminants, EnumIter, IntoEnumIterator};
 
 #[allow(unused_imports)]
 pub use anyhow::{Context, Result, bail};

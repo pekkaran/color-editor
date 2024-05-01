@@ -2,6 +2,7 @@
 
 mod all;
 mod color_file;
+mod parse_options;
 mod render;
 
 use all::*;
@@ -24,13 +25,29 @@ struct Args {
   /// UI scale. Use eg 1.5 to make everything bigger.
   #[arg(short, long, default_value_t = 1.0)]
   pub scale: f32,
+
+  /// If set, also match 6 digit hex numbers not prefixed by "#" or "0x". May
+  /// cause false positives.
+  #[arg(long)]
+  pub prefixless6: bool,
+
+  /// If set, also match 3 digit hex numbers not prefixed by "#" or "0x".
+  #[arg(long)]
+  pub prefixless3: bool,
 }
 
 fn main() -> Result<()> {
   env_logger::Builder::new().filter_level(log::LevelFilter::Info).init();
   let args = Args::parse();
 
-  let color_file = ColorFile::new(&args.source_path)?;
+  // Could configure these also on the UI but must implement reparsing (not
+  // reloading since it the file might be unsaved).
+  let parse_options = ParseOptions {
+    prefixless6: args.prefixless6,
+    prefixless3: args.prefixless3,
+  };
+
+  let color_file = ColorFile::new(&args.source_path, &parse_options)?;
 
   let options = eframe::NativeOptions {
     viewport: egui::ViewportBuilder::default().with_maximized(true),

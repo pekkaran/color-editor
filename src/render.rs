@@ -21,7 +21,7 @@ pub fn render_center(ui: &mut egui::Ui, c: &mut ColorEditor) {
             let box_response = render_color_box(ui, *color32, 10.);
             ui.add_space(SPACE_AROUND_COLOR_BOX);
 
-            let s = color_to_text(*color_kind, *color32);
+            let s = color_to_text(color_kind, *color32);
             let link_response = ui.link(rich_text(&s, c.monospace));
 
             if link_response.clicked() || box_response.clicked() {
@@ -63,7 +63,7 @@ pub fn render_left(ui: &mut egui::Ui, c: &mut ColorEditor) {
   ui.separator();
 
   if let Some(selected_token) = c.selected_token {
-    if let Token::Color(_color_kind, ref mut color32) = c.color_file.tokens[selected_token] {
+    if let Token::Color(_color_kind, ref mut color32) = &mut c.color_file.tokens[selected_token] {
       let color32_before_pick = color32.clone();
       render_color_picker(ui, color32);
       ui.separator();

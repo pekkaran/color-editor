@@ -1,8 +1,11 @@
 use crate::all::*;
 
 lazy_static! {
-  static ref RE_HEX6: Regex = Regex::new(r"#?([[:xdigit:]]{2})([[:xdigit:]]{2})([[:xdigit:]]{2})").unwrap();
-  static ref RE_HEX3: Regex = Regex::new(r"#?([[:xdigit:]])([[:xdigit:]])([[:xdigit:]])").unwrap();
+  /// Six digit hex color with prefix "#" or "0x".
+  static ref RE_HEX6: Regex = Regex::new(r"(#|0x)?([[:xdigit:]]{2})([[:xdigit:]]{2})([[:xdigit:]]{2})").unwrap();
+
+  /// Three digit hex color with prefix "#" or "0x".
+  static ref RE_HEX3: Regex = Regex::new(r"(#|0x)?([[:xdigit:]])([[:xdigit:]])([[:xdigit:]])").unwrap();
 }
 
 pub struct ColorFile {
@@ -12,11 +15,11 @@ pub struct ColorFile {
 }
 
 impl ColorFile {
-  pub fn new(path: &Path) -> Result<Self> {
+  pub fn new(path: &Path, parse_options: &ParseOptions) -> Result<Self> {
     let source = std::fs::read_to_string(path)
       .with_context(fformat!("read file `{}`.", path.display()))?;
 
-    let (tokens, color_count) = parse_text(&source)?;
+    let (tokens, color_count) = parse_text(&source, parse_options)?;
     Ok(ColorFile {
       tokens,
       color_count,
@@ -31,7 +34,7 @@ impl ColorFile {
     for token in &self.tokens {
       match token {
         Token::Color(color_kind, color32) => {
-          write!(file, "{}", color_to_text(*color_kind, *color32))
+          write!(file, "{}", color_to_text(color_kind, *color32))
             .with_context(fformat!("write file `{}`.", self.path.display()))?;
         },
         Token::Text(s) => {
@@ -51,65 +54,80 @@ pub enum Token {
   Text(String),
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
+#[derive(EnumDiscriminants)]
+#[strum_discriminants(derive(EnumIter))]
 pub enum ColorKind {
-  Hex6, // eg #ebc17a
-  Hex3, // eg #ebc
-  // DelimitedHex6, // eg "ebc17a" or 'ebc17a'
-  // Tuple3 // eg (255, 255, 128) or [255, 255, 128]
+  // eg `#ebc17a` where prefix is `#`. The prefix can be empty string.
+  Hex6 { prefix: String },
+
+  // eg `#ebc`
+  Hex3 { prefix: String },
+
+  // eg "ebc17a" or 'ebc17a'. Could help avoid false positives compared to no-prefix matching.
+  // DelimitedHex6,
+
+  // eg (255, 255, 128) or [255, 255, 128]
+  // Tuple3
 }
 
-impl ColorKind {
+impl ColorKindDiscriminants {
   pub fn regex(self) -> Regex {
     match self {
-      ColorKind::Hex6 => Regex::new(r"#[[:xdigit:]]{6}").unwrap(),
-      ColorKind::Hex3 => Regex::new(r"#[[:xdigit:]]{3}").unwrap(),
-    }
-  }
-
-  pub fn to_color32(self, s: &str) -> Result<Color32> {
-    match self {
-      ColorKind::Hex6 => {
-        if let Some(c) = RE_HEX6.captures(s) {
-          Ok(Color32::from_rgb(
-            u8::from_str_radix(&c[1], 16)?,
-            u8::from_str_radix(&c[2], 16)?,
-            u8::from_str_radix(&c[3], 16)?,
-          ))
-        }
-        else {
-          bail!("Failed to parse Hex6: `{}`", s);
-        }
-      },
-      ColorKind::Hex3 => {
-        if let Some(c) = RE_HEX3.captures(s) {
-          // 17 = 16 + 1, so eg "0xa" becomes "0xaa".
-          Ok(Color32::from_rgb(
-            17 * u8::from_str_radix(&c[1], 16)?,
-            17 * u8::from_str_radix(&c[2], 16)?,
-            17 * u8::from_str_radix(&c[3], 16)?,
-          ))
-        }
-        else {
-          bail!("Failed to parse Hex6: `{}`", s);
-        }
-      },
+      ColorKindDiscriminants::Hex6 => RE_HEX6.clone(),
+      ColorKindDiscriminants::Hex3 => RE_HEX3.clone(),
     }
   }
 }
 
-pub fn color_to_text(color_kind: ColorKind, color32: Color32) -> String {
+fn parse_color(
+  d: ColorKindDiscriminants,
+  c: &regex::Captures,
+) -> Result<(ColorKind, Color32)> {
+  match d {
+    ColorKindDiscriminants::Hex6 => {
+      let prefix = match c.get(1) {
+        None => String::from(""),
+        Some(m) => m.as_str().to_string(),
+      };
+
+      Ok((ColorKind::Hex6 { prefix }, Color32::from_rgb(
+        u8::from_str_radix(&c[2], 16)?,
+        u8::from_str_radix(&c[3], 16)?,
+        u8::from_str_radix(&c[4], 16)?,
+      )))
+    },
+    ColorKindDiscriminants::Hex3 => {
+      let prefix = match c.get(1) {
+        None => String::from(""),
+        Some(m) => m.as_str().to_string(),
+      };
+
+      // 17 = 16 + 1, so eg "#a" becomes "#aa".
+      Ok((ColorKind::Hex3 { prefix }, Color32::from_rgb(
+        17 * u8::from_str_radix(&c[2], 16)?,
+        17 * u8::from_str_radix(&c[3], 16)?,
+        17 * u8::from_str_radix(&c[4], 16)?,
+      )))
+    },
+  }
+}
+
+pub fn color_to_text(color_kind: &ColorKind, color32: Color32) -> String {
   match color_kind {
-    ColorKind::Hex6 => {
-      format!("#{:02x}{:02x}{:02x}", color32.r(), color32.g(), color32.b())
+    ColorKind::Hex6 { prefix } => {
+      format!("{}{:02x}{:02x}{:02x}", &prefix, color32.r(), color32.g(), color32.b())
     },
-    ColorKind::Hex3 => {
-      format!("#{:x}{:x}{:x}", color32.r() / 16, color32.g() / 16, color32.b() / 16)
+    ColorKind::Hex3 { prefix } => {
+      format!("{}{:x}{:x}{:x}", &prefix, color32.r() / 16, color32.g() / 16, color32.b() / 16)
     },
   }
 }
 
-fn parse_text(source: &str) -> Result<(Vec<Token>, usize)> {
+fn parse_text(
+  source: &str,
+  parse_options: &ParseOptions,
+) -> Result<(Vec<Token>, usize)> {
   #[derive(Clone)]
   struct ColorRange {
     range: Range<usize>,
@@ -136,20 +154,33 @@ fn parse_text(source: &str) -> Result<(Vec<Token>, usize)> {
     false
   };
 
-  use ColorKind::*;
-  for color_kind in [Hex6, Hex3] {
+  for color_kind_d in ColorKindDiscriminants::iter() {
     new_ranges.clear();
-    let re = color_kind.regex();
+    let re = color_kind_d.regex();
     let matches: Vec<_> = re.find_iter(source).collect();
     for m in matches {
       let r = m.range();
-      if overlaps(&r, &used_ranges) {
-        continue
+      if overlaps(&r, &used_ranges) { continue }
+
+      // There does not seem to be a way to get both the range and the captures
+      // at the same time. This should always succeed.
+      let Some(captures) = re.captures(m.as_str()) else { continue };
+
+      let (color_kind, color32) = parse_color(color_kind_d, &captures)?;
+
+      match color_kind {
+        ColorKind::Hex6 { ref prefix } => {
+          if !parse_options.prefixless6 && prefix.is_empty() { continue }
+        },
+        ColorKind::Hex3 { ref prefix } => {
+          if !parse_options.prefixless3 && prefix.is_empty() { continue }
+        },
       }
+
       new_ranges.push(ColorRange {
         range: r,
         color_kind,
-        color32: color_kind.to_color32(m.as_str())?,
+        color32,
       });
     }
     used_ranges.extend_from_slice(&new_ranges);
