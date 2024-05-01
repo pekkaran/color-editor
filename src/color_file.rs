@@ -7,6 +7,7 @@ lazy_static! {
 
 pub struct ColorFile {
   pub tokens: Vec<Token>,
+  pub path: PathBuf,
 }
 
 impl ColorFile {
@@ -17,7 +18,27 @@ impl ColorFile {
     let tokens = parse_text(&source)?;
     Ok(ColorFile {
       tokens,
+      path: path.to_owned(),
     })
+  }
+
+  pub fn save(&self) -> Result<()> {
+    let mut file = File::create(&self.path)
+      .with_context(fformat!("Open file `{}` for writing.", self.path.display()))?;
+
+    for token in &self.tokens {
+      match token {
+        Token::Color(color_kind, color32) => {
+          write!(file, "{}", color_to_text(*color_kind, *color32))
+            .with_context(fformat!("write file `{}`.", self.path.display()))?;
+        },
+        Token::Text(s) => {
+          write!(file, "{}", s)
+            .with_context(fformat!("write file `{}`.", self.path.display()))?;
+        },
+      }
+    }
+    Ok(())
   }
 }
 
@@ -33,7 +54,7 @@ pub enum ColorKind {
   Hex6, // eg #ebc17a
   Hex3, // eg #ebc
   // DelimitedHex6, // eg "ebc17a" or 'ebc17a'
-  // Tuple3 // eg (255, 255, 128)
+  // Tuple3 // eg (255, 255, 128) or [255, 255, 128]
 }
 
 impl ColorKind {

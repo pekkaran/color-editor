@@ -29,8 +29,9 @@ fn main() -> Result<()> {
     Box::new(|_creation_context| { Box::new(ColorEditor {
       color_file,
       selected_token: None,
-      old_color: Color32::BLACK,
+      old_color32: Color32::BLACK,
       monospace: true,
+      should_save: false,
     })}),
   ).unwrap();
 
@@ -41,8 +42,9 @@ fn main() -> Result<()> {
 pub struct ColorEditor {
   pub color_file: ColorFile,
   pub selected_token: Option<usize>,
-  pub old_color: Color32,
+  pub old_color32: Color32,
   pub monospace: bool,
+  pub should_save: bool,
 }
 
 impl eframe::App for ColorEditor {
@@ -58,5 +60,10 @@ impl eframe::App for ColorEditor {
     egui::CentralPanel::default().show(ctx, |ui| {
       render_center(ui, self);
     });
+
+    if self.should_save {
+      self.color_file.save().unwrap();
+      self.should_save = false;
+    }
   }
 }

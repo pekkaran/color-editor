@@ -22,7 +22,7 @@ pub fn render_center(ui: &mut egui::Ui, c: &mut ColorEditor) {
 
             if link_response.clicked() || box_response.clicked() {
               c.selected_token = Some(i);
-              c.old_color = *color32;
+              c.old_color32 = *color32;
             }
           },
         }
@@ -54,13 +54,21 @@ pub fn render_left(ui: &mut egui::Ui, c: &mut ColorEditor) {
 
   if let Some(selected_token) = c.selected_token {
     if let Token::Color(_color_kind, ref mut color32) = c.color_file.tokens[selected_token] {
+      let color32_before_pick = color32.clone();
       render_color_picker(ui, color32);
       ui.separator();
       ui.label("Previous and current colors:");
       ui.horizontal_wrapped(|ui| {
-        render_color_box(ui, c.old_color, COLOR_COMPARISON_BOX_SIZE);
+        render_color_box(ui, c.old_color32, COLOR_COMPARISON_BOX_SIZE);
         render_color_box(ui, *color32, COLOR_COMPARISON_BOX_SIZE);
       });
+      if *color32 != color32_before_pick {
+        c.should_save = true;
+      }
+
+      if ui.button("Restore previous").clicked() {
+        *color32 = c.old_color32;
+      }
     }
   }
 }

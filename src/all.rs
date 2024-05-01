@@ -15,6 +15,8 @@ pub use log::info;
 pub use regex::Regex;
 
 pub use std::{
+  fs::File,
+  io::Write,
   ops::Range,
   path::{Path, PathBuf},
 };
