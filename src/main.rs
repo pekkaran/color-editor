@@ -100,6 +100,7 @@ impl eframe::App for ColorEditor {
     });
 
     if self.should_save {
+      // TODO Print errors instead of panicing.
       self.color_file.save().unwrap();
       self.should_save = false;
     }
