@@ -78,6 +78,7 @@ pub fn render_left(ui: &mut egui::Ui, c: &mut ColorEditor) {
 
       if ui.button("Restore previous").clicked() {
         *color32 = c.old_color32;
+        c.should_save = true;
       }
     }
   }
